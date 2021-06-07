@@ -1,6 +1,90 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>Touch和Mouse事件</title>
+    <url>/2021/06/07/touch%E5%92%8Cmouse%E4%BA%8B%E4%BB%B6/</url>
+    <content><![CDATA[<h4 id="一个问题引发的思考"><a href="#一个问题引发的思考" class="headerlink" title="一个问题引发的思考"></a>一个问题引发的思考</h4><p>移动端的一个页面，猜测哈，hover事件&amp;mouseover事件都被监听时，mouse应该失效吧。因为移动端只有点触，没有mouse。<br>事实：出现mouseover（定义了这个时候的样式）状态，就很奇怪。<br>然后，本以为mouse和touch在浏览器中是这样的：</p>
+<ul>
+<li>pc端：mouse事件生效，touch事件<del>失效</del></li>
+<li>移动端：mouse事件<del>失效</del>，touch事件生效</li>
+<li><strong>但是</strong>，结果是这样的：<br>同时监听了mouse和touch两种事件，在ios移动设备中的safari浏览器中，点击触发touch事件之后，定义的mouseover事件也触发了，产生了bug。</li>
+</ul>
+<h4 id="研究它"><a href="#研究它" class="headerlink" title="研究它"></a>研究它</h4><p>敲黑板：</p>
+<ul>
+<li>pc端：onTouch事件会被屏蔽。</li>
+<li>移动端：两种事件都会被触发。且顺序是这样的：<ol>
+<li>touchstart</li>
+<li>touchmove</li>
+<li>touchend</li>
+<li>mouseover</li>
+<li>mousemove</li>
+<li>mousedown</li>
+<li>mouseup</li>
+<li>click</li>
+</ol>
+</li>
+</ul>
+<p>好吧，这是这一切出现的原因。<br>在适配多种设备的项目中，怎么区分这两种事件，让mouse事件在移动端失效呢。</p>
+<h4 id="方法："><a href="#方法：" class="headerlink" title="方法："></a>方法：</h4><ul>
+<li>设置一个flag，mouse事件时判断touchFlag决定return或者执行。</li>
+<li>分开写，判断设备后需要mouse的写mouse，需要touch的写touch。</li>
+<li>最好的方法：preventDefault()<blockquote>
+<p><strong>Use preventDefault() inside touch event handlers, so the default mouse-emulation handling doesn’t occur.</strong></p>
+</blockquote>
+</li>
+</ul>
+<h4 id="preventDefault"><a href="#preventDefault" class="headerlink" title="preventDefault()"></a>preventDefault()</h4><p>专门挑出来说一下这个：preventDefault()【该方法将通知 Web 浏览器不要执行与事件关联的默认动作（如果存在这样的动作）。】<br>于是，在<code>touchstart</code>方法中使用<code>e.preventDefault()</code>去阻止之后的mouseover事件。<br><font color='red'>报错了</font>：Unable to preventDefault inside passive event listener due to target being treated as passive.</p>
+<blockquote>
+<p>翻译： 由于目标被视为被动，无法在被动事件监听器内防止。</p>
+</blockquote>
+<h5 id="passive-的事件监听器"><a href="#passive-的事件监听器" class="headerlink" title="passive 的事件监听器"></a>passive 的事件监听器</h5><figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">addEventListener(type, listener, &#123;</span><br><span class="line">    capture: <span class="literal">false</span>,</span><br><span class="line">    passive: <span class="literal">true</span>,</span><br><span class="line">    once: <span class="literal">false</span></span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+<p>三个属性都是布尔类型的开关。其中 capture 属性等价于以前的 useCapture 参数；once 属性就是表明该监听器是一次性的，执行一次后就被自动 removeEventListener 掉，还没有浏览器实现它；passive 属性在 Firefox 和 Chrome 已经实现。<br>很多移动端的页面都会监听 touchstart 等 touch 事件，像这样：</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line"><span class="built_in">document</span>.addEventListener(<span class="string">"touchstart"</span>, <span class="function"><span class="keyword">function</span>(<span class="params">e</span>)</span>&#123;</span><br><span class="line">    ... <span class="comment">// 浏览器不知道这里会不会有 e.preventDefault()</span></span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+<p>由于 touchstart 事件对象的 cancelable 属性为 true，也就是说它的默认行为可以被监听器通过 preventDefault() 方法阻止，那它的默认行为是什么呢，通常来说就是滚动当前页面（还可能是缩放页面），如果它的默认行为被阻止了，页面就必须静止不动。但浏览器无法预先知道一个监听器会不会调用 preventDefault()，它能做的只有等监听器执行完后再去执行默认行为，而监听器执行是要耗时的，有些甚至耗时很明显，这样就会导致页面卡顿。</p>
+<p>Passive Event Listeners：就是告诉前页面内的事件监听器内部是否会调用<code>preventDefault</code>函数来阻止事件的默认行为，以便浏览器根据这个信息更好地做出决策来优化页面性能。当属性passive的值为true的时候，代表该监听器内部不会调用<code>preventDefault</code>函数来阻止默认滑动行为，Chrome浏览器称这类型的监听器为被动（passive）监听器。目前Chrome主要利用该特性来优化页面的滑动性能，所以Passive Event Listeners特性当前仅支持mousewheel/touch相关事件。</p>
+<p><strong>耗时是什么</strong><br>当用户在移动设备上点击网页中的某个元素时，没有为移动交互设计的网页在触摸开始事件和处理鼠标事件（mousedown）之间至少有300毫秒的延迟。如果你有触摸设备，你可以看看这个例子。或者，使用Chrome浏览器，你可以在Chrome开发者工具中打开 “模拟触摸事件”，以帮助你在非触摸系统上测试触摸界面!</p>
+<p>这个延迟是为了让浏览器有时间判断用户是否在做其他手势–特别是双击缩放。很明显，在你想对手指触摸做出即时反应的情况下，这可能是个问题。目前正在进行的工作是试图限制这种延迟自动发生的情况。</p>
+<table>
+<thead>
+<tr>
+<th align="left"></th>
+<th align="left">Chrome for Android</th>
+<th align="left">Android Browser</th>
+<th align="left">Opera Mobile for Android</th>
+<th align="left">Firefox for Android</th>
+<th align="left">Safari iOS</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">Non-scalable viewport</td>
+<td align="left">No delay</td>
+<td align="left">300ms</td>
+<td align="left">300ms</td>
+<td align="left">No delay</td>
+<td align="left">300ms</td>
+</tr>
+<tr>
+<td align="left">No Viewport</td>
+<td align="left">300ms</td>
+<td align="left">300ms</td>
+<td align="left">300ms</td>
+<td align="left">300ms</td>
+<td align="left">300ms</td>
+</tr>
+</tbody></table>
+<p>避免这种问题的一个简单方法，就是直接告诉浏览器，我这个页面不需要滚动：<code>&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width,user-scalable=no&quot;&gt;</code>，一般在移动端这样写可以。</p>
+<p><strong>综上</strong>：<br>  事件监听时，设置第三个参数中：passive为false，告诉浏览器我要自己控制<code>preventDefault</code>函数来阻止事件的默认行为。</p>
+<p><strong>如下</strong>：<br>  <figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">private onTouchStart(e:MouseEvent) &#123;</span><br><span class="line">  e.preventDefault();</span><br><span class="line">  <span class="built_in">console</span>.log(<span class="string">'onTouchStart'</span>, e.cancelable);</span><br><span class="line">&#125;</span><br><span class="line">private onMouseOver(e:MouseEvent) &#123;</span><br><span class="line">  <span class="built_in">console</span>.log(<span class="string">'onMouseOver'</span>, e.cancelable);</span><br><span class="line">&#125;</span><br><span class="line">componentDidMount() &#123;</span><br><span class="line">  <span class="keyword">if</span> (<span class="keyword">this</span>.touchElement) &#123;</span><br><span class="line">    <span class="keyword">this</span>.touchElement.addEventListener(<span class="string">'touchstart'</span>, <span class="keyword">this</span>.onTouchStart, &#123;<span class="attr">passive</span>: <span class="literal">false</span>&#125;);</span><br><span class="line">    <span class="keyword">this</span>.touchElement.addEventListener(<span class="string">'mouseover'</span>, <span class="keyword">this</span>.onMouseOver, &#123;<span class="attr">passive</span>: <span class="literal">false</span>&#125;);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><br>  <figure class="highlight jsx"><table><tr><td class="code"><pre><span class="line">&lt;div styleName=&#123;<span class="string">'btn-start-wrap'</span>&#125; ref=&#123;</span><br><span class="line">  (ref) =&gt; &#123;</span><br><span class="line">    <span class="keyword">if</span> (ref) &#123;</span><br><span class="line">      <span class="keyword">this</span>.touchElement = ref;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;&#125;&gt;</span><br></pre></td></tr></table></figure><br>  以上的代码touchstart后不会触发mouseover。实现了阻止移动端也触发mouse事件的逻辑。</p>
+<h4 id="参见："><a href="#参见：" class="headerlink" title="参见："></a>参见：</h4><p>  <a class="link"   href="https://www.jianshu.com/p/5bae6433025f"  target="_blank" rel="noopener">Passive Event Listeners——让页面滑动更加流畅的新特性<i class="fas fa-external-link-alt"></i></a><br>  <a class="link"   href="https://www.cnblogs.com/ziyunfei/p/5545439.html"  target="_blank" rel="noopener">紫云飞 – passive 的事件监听器<i class="fas fa-external-link-alt"></i></a><br>  <a class="link"   href="https://www.html5rocks.com/en/mobile/touchandmouse/"  target="_blank" rel="noopener">touch&amp;mouse<i class="fas fa-external-link-alt"></i></a></p>
+]]></content>
+      <categories>
+        <category>移动端</category>
+      </categories>
+      <tags>
+        <tag>移动端</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>webpackPlugins</title>
     <url>/2021/05/28/webpackPlugins/</url>
     <content><![CDATA[<h4 id="webpack-DefinePlugin"><a href="#webpack-DefinePlugin" class="headerlink" title="webpack.DefinePlugin"></a>webpack.DefinePlugin</h4><ul>
@@ -161,6 +245,7 @@
     <url>/2021/03/16/%E6%89%8B%E5%86%99%E4%BB%A3%E7%A0%81%E5%92%94%E5%92%94%E5%92%94/</url>
     <content><![CDATA[<h3 id="咔咔咔"><a href="#咔咔咔" class="headerlink" title="咔咔咔"></a>咔咔咔</h3><ul>
 <li><a href="/2021/03/16/手写代码系列之防抖与节流/">手写代码系列之防抖与节流</a></li>
+<li><a href="/2021/03/17/手写代码系列之New-fn/">New</a></li>
 </ul>
 ]]></content>
       <categories>
@@ -1327,8 +1412,8 @@
         <category>vue</category>
       </categories>
       <tags>
-        <tag>vue</tag>
         <tag>svg</tag>
+        <tag>vue</tag>
       </tags>
   </entry>
   <entry>
