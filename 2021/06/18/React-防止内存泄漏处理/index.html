@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
     
     <title>
-        git常用命令(个人总结) |
+        React-防止内存泄漏处理 |
         
         FEIDOM
     </title>
@@ -115,7 +115,7 @@
     <div class="article-content-container">
 
         <div class="article-title">
-            <span class="title-hover-animation">git常用命令(个人总结)</span>
+            <span class="title-hover-animation">React-防止内存泄漏处理</span>
         </div>
 
         
@@ -131,7 +131,7 @@
                     <div class="meta-info">
                         <div class="article-meta-info">
     <span class="article-date article-meta-item">
-        <i class="fas fa-calendar"></i> 2020-07-04 21:04:13
+        <i class="fas fa-calendar"></i> 2021-06-18 13:40:49
     </span>
     
         <span class="article-categories article-meta-item">
@@ -139,7 +139,7 @@
             <ul>
                 
                     <li>
-                        <a href="/categories/git/">git</a>
+                        <a href="/categories/react/">react</a>
                     </li>
                 
             </ul>
@@ -151,7 +151,7 @@
             <ul>
                 
                     <li>
-                        <a href="/tags/git/">git</a>
+                        <a href="/tags/react/">react</a>
                     </li>
                 
             </ul>
@@ -170,92 +170,21 @@
         
 
         <div class="article-content markdown-body">
-            <h3 id="git概念"><a href="#git概念" class="headerlink" title="git概念"></a>git概念</h3><ul>
-<li>Workspace：工作区</li>
-<li>Index / Stage：暂存区</li>
-<li>Repository：本地仓库</li>
-<li>Remote：远程仓库</li>
-</ul>
-<h3 id="常用命令"><a href="#常用命令" class="headerlink" title="常用命令"></a>常用命令</h3><ul>
-<li><p>查看git config配置<br><code>git config --list</code></p>
-</li>
-<li><p>git config全局配置</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">git config --global user.name <span class="string">"feidom"</span></span><br><span class="line">git config --global user.email <span class="string">"qiaoxiansen@hotmail.com"</span></span><br></pre></td></tr></table></figure>
-</li>
-<li><p>git config针对单个项目配置用户</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># cd 项目目录,作用于当前项目下的.git目录下的config</span></span><br><span class="line">git config user.name <span class="string">"feidom"</span></span><br><span class="line">git config user.email <span class="string">"qiaoxiansen@hotmail.com"</span></span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<hr>
+            <p>用React写了一段代码，浏览器的控制台<font color=red size=5>Error </font>如下：<br><font color=red>Warning: Can’t perform a React state update on an unmounted component. This is a no-op, but it indicates a memory leak in your application. To fix, cancel all subscriptions and asynchronous tasks in a useEffect cleanup function.</font></p>
+<p>啥意思呢：不能在未挂载的组件上执行React状态更新。这是一个无用功，但它表明你的应用程序中存在内存泄漏。要解决这个问题，在useEffect清理函数中取消所有的订阅和异步任务。</p>
+<p>以下是这段问题代码：</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> Component = <span class="function">(<span class="params">props</span>) =&gt;</span> &#123;</span><br><span class="line">  <span class="keyword">const</span> &#123; itemId &#125; = props;</span><br><span class="line">  <span class="keyword">const</span> [ isRemoveing, setIsRemoveing ] = useState(<span class="literal">false</span>);</span><br><span class="line">  <span class="keyword">const</span> handlerRemove = <span class="keyword">async</span>() =&gt; &#123;</span><br><span class="line">    <span class="keyword">if</span>(isRemoveing) <span class="keyword">return</span>;</span><br><span class="line">    setIsRemoveing(<span class="literal">true</span>);</span><br><span class="line">    <span class="keyword">await</span> removeItem(itemId); <span class="comment">// 删除当前这个组件的数据，这个组件卸载</span></span><br><span class="line">    setIsRemoveing(<span class="literal">false</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> (</span><br><span class="line">    &lt;&gt;</span><br><span class="line">      &lt;div class_name=&#123; !isRemoveing ? <span class="string">'class1'</span> : <span class="string">'class2'</span> &#125; onClick=&#123;handlerRemove&#125; &gt;&lt;<span class="regexp">/div&gt;</span></span><br><span class="line"><span class="regexp">    &lt;/</span>&gt;</span><br><span class="line">  )</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><strong>原因是啥呢</strong>：await等待一个异步请求的返回再<code>setIsRemoveing</code>。假如这个组件unmounted之后，请求还没回来，你还在这setState，不就炸了。</p>
+<p>好吧，那解决方式是不是在<code>useEffect</code>中定义一个卸载时的变量<code>unmounted</code>，然后在setIsRemoveing时判断卸载状态？</p>
+<p>嗯，基本是这个思路。那这个<code>unmounted</code>该怎么定义，是直接<code>const unmounted = false;</code>, 还是<code>const [ unmounted, setUnmounted ] = useState(false);</code>？<br>以下是Stack Overflow里一个帖子的回复：</p>
 <ul>
-<li><p>克隆一个项目和它的整个代码历史<br><code>$ git clone [url]</code></p>
-</li>
-<li><p>查看本地仓库分支<br><code>$ git branch</code></p>
-</li>
-<li><p>查看所有本地分支和远程分支<br><code>$ git branch -a</code></p>
-</li>
-<li><p>查看所有所有远程分支<br><code>$ git branch -r</code></p>
-</li>
-<li><p>查看分支关联关系<br><code>$ git branch -vv</code></p>
+<li>方式一：<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">useEffect(<span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">  <span class="keyword">let</span> unmounted = <span class="literal">false</span>;</span><br><span class="line">  setPageLoading(<span class="literal">true</span>);</span><br><span class="line">  props</span><br><span class="line">    .dispatch(fetchCourses())</span><br><span class="line">    .then(<span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">      <span class="keyword">if</span> (!unmounted) &#123;</span><br><span class="line">        setPageLoading(<span class="literal">false</span>);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;)</span><br><span class="line">    .catch(<span class="function">(<span class="params">error: string</span>) =&gt;</span> &#123;</span><br><span class="line">      <span class="keyword">if</span> (!unmounted) &#123;</span><br><span class="line">        toast.error(error);</span><br><span class="line">        setPageLoading(<span class="literal">false</span>);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> <span class="function"><span class="params">()</span> =&gt;</span> &#123; unmounted = <span class="literal">true</span> &#125;;</span><br><span class="line">&#125;, []);</span><br></pre></td></tr></table></figure></li>
+<li>方式二：useRef<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> Example = <span class="function">(<span class="params">props</span>) =&gt;</span> &#123;</span><br><span class="line">  <span class="keyword">const</span> unmounted = useRef(<span class="literal">false</span>);</span><br><span class="line">  useEffect(<span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="function"><span class="params">()</span> =&gt;</span> &#123; unmounted.current = <span class="literal">true</span> &#125;</span><br><span class="line">  &#125;, []);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">const</span> setFilter = <span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">    props.dispatch(fetchCourses()).then(<span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">      <span class="keyword">if</span> (!unmounted.current) &#123;</span><br><span class="line">        setLoading(<span class="literal">false</span>);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;)</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">  <span class="keyword">return</span> (</span><br><span class="line">    &lt;ReactTable onFetchData=&#123;setFilter&#125; <span class="comment">/* other props omitted */</span> /&gt;</span><br><span class="line">  );</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 </li>
 </ul>
-<hr>
-<ul>
-<li><p>查看不同<br><code>$ git diff</code></p>
-</li>
-<li><p>显示有变更的文件<br><code>$ git status</code></p>
-</li>
-<li><p>添加当前目录的所有文件到暂存区<br><code>$ git add .</code></p>
-</li>
-<li><p>提交暂存区到本地仓库<br><code>$ git commit -m [提交信息]</code></p>
-</li>
-<li><p>拉取远程仓库带代码到本地仓库并合并<br><code>$ git pull [remote] [branch]</code><br><code>$ git pull</code>(分支有关联关系时)</p>
-</li>
-<li><p>上传本地指定分支到远程仓库<br><code>$ git push [remote] [branch]</code><br><code>$ git push</code>(分支有关联关系时)</p>
-</li>
-</ul>
-<hr>
-<ul>
-<li>创建一个新的空分支（内容来自互联网）<br><code>$ git checkout --orphan [新的分支名]</code> (建一个没有父节点的分支，但是会复制当前分支的内容到新的分支上。)</li>
-</ul>
-<blockquote>
-<p>&emsp; 这个命令创建了新的分支并切换到新的分支下，并且里边有上个分支的内容<br>&emsp; <strong>注意</strong> ：其实这个时候新的分支还不能说是一个分支，你查看分支的话，是没有这个分支的，你必须要提交一次，这个分支才算是真的创建出来了<br>&emsp; 因为这个分支没有父节点，所以没有任何的历史，只需要调用<br>&emsp; <code>$ git rm -rf .</code><br>&emsp; 删除所有的文件（只会删除加入版本管理的文件），然后你可以随便创建一个文件，提交之后，这个新的空分支就算是创建完成了。</p>
-</blockquote>
-<ul>
-<li><p>新建一个本地分支，并切换到该分支<br><code>$ git checkout -b [本地分支] [remote]</code>(-b会建立本地分支和远程分支的关联关系)</p>
-</li>
-<li><p>从某个提交记录(2b5c3292)拉一个新分支出来<br><code>$ git checkout 2b5c3292 -b [branch]</code></p>
-</li>
-<li><p>提交当前分支到远程仓库的对应的新分支<br><code>$ git push -u origin [branch]</code>(-u会建立本地分支和远程分支的关联关系)</p>
-</li>
-<li><p>新建本地分支与远程分支关联关系<br><code>git branch --set-upstream-to [远程分支] [本地分支]</code></p>
-</li>
-<li><p>删除本地分支<br>切到其他分支，然后<code>git branch -d [本地分支]</code></p>
-</li>
-<li><p>从远程获取其他用户push上来的新分支<br><code>git fetch</code></p>
-</li>
-</ul>
-<hr>
-<ul>
-<li><p>查看远程仓库信息<br><code>git remote -v</code></p>
-</li>
-<li><p>移除远程仓库<br><code>git remote remove origin</code></p>
-</li>
-<li><p>添加远程仓库<br><code>git remote add origin [远程仓库地址]</code></p>
-</li>
-</ul>
-<hr>
-<ul>
-<li>vscode合并分支<br>在vscode界面，输入：<code>ctrl(win)/command(mac)+shift+p</code>,然后输入<code>git merge</code>，然后选一个要合并到当前分支的分支，回车确定即可。<br><img src="https://image-static.segmentfault.com/800/712/800712115-59e96580eae4c_articlex" alt="git merge"><br><img src="https://image-static.segmentfault.com/236/385/2363856556-59e965b2e3674_articlex" alt="选择分支"></li>
-</ul>
-<h3 id="git问题解决："><a href="#git问题解决：" class="headerlink" title="git问题解决："></a>git问题解决：</h3><ul>
-<li>git clone 时出错： <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">error: RPC failed; result&#x3D;35, HTTP code &#x3D; 0</span><br><span class="line">fatal: The remote end hung up unexpectedly</span><br></pre></td></tr></table></figure>
-解决：<ul>
-<li>查看全局的postBuffer配置 <code>git config http.postBuffer</code></li>
-<li>把这个配置改大一点： <code>git config http.postBuffer 24288000</code></li>
-</ul>
-</li>
-</ul>
+<p>方式二中如果不用ref，用state或者直接定义变量的话，都实现不了。<br>好吧，是我不熟悉的<a class="link"   href="https://zh-hans.reactjs.org/docs/hooks-reference.html#useref"  target="_blank" rel="noopener">useRef<i class="fas fa-external-link-alt"></i></a>,这个链接是官方文档，可以先看下。<br>然后为了研究它，我找到一篇来自<a class="link"   href="https://leewarrick.com/"  target="_blank" rel="noopener">Lee Warrick<i class="fas fa-external-link-alt"></i></a>的<a class="link"   href="https://leewarrick.com/blog/react-use-effect-explained/"  target="_blank" rel="noopener">React’s useEffect and useRef Explained for Mortals<i class="fas fa-external-link-alt"></i></a>。<a href="/2021/06/18/useEffect-useRef/">这里</a>是我对这篇文章的翻译，仅供参考。</p>
+<h4 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h4><p><a class="link"   href="https://daviseford.com/blog/2019/07/11/react-hooks-check-if-mounted.html"  target="_blank" rel="noopener">React Hooks - Check If A Component Is Mounted<i class="fas fa-external-link-alt"></i></a><br><a class="link"   href="https://stackoverflow.com/questions/58038008/how-to-stop-memory-leak-in-useeffect-hook-react/58038029"  target="_blank" rel="noopener">how-to-stop-memory-leak-in-useeffect-hook-react<i class="fas fa-external-link-alt"></i></a></p>
 
         </div>
 
@@ -263,11 +192,11 @@
             <div class="post-copyright-info">
                 <div class="article-copyright-info-container">
     <ul>
-        <li>本文标题：git常用命令(个人总结)</li>
+        <li>本文标题：React-防止内存泄漏处理</li>
         <li>本文作者：乔文飞</li>
-        <li>创建时间：2020-07-04 21:04:13</li>
+        <li>创建时间：2021-06-18 13:40:49</li>
         <li>
-            本文链接：http://www.feidom.com/2020/07/04/git常用命令/
+            本文链接：http://www.feidom.com/2021/06/18/React-防止内存泄漏处理/
         </li>
         <li>
             版权声明：本博客所有文章为作者学习笔记，有转载其他前端大佬的文章。转载时请注明出处。
@@ -281,29 +210,14 @@
         
             <div class="article-nav">
                 
-                    <div class="article-prev">
-                        <a class="prev"
-                           rel="prev"
-                           href="/2020/07/06/hexo%E7%9A%84categories%E5%92%8Ctags%E9%A1%B5%E9%9D%A2%E4%B8%8D%E8%87%AA%E5%8A%A8%E6%94%B6%E5%BD%95%E7%9A%84%E9%97%AE%E9%A2%98/"
-                        >
-                            <span class="left arrow-icon flex-center" >
-                              <i class="fas fa-chevron-left"></i>
-                            </span>
-                            <span class="title flex-center">
-                                <span class="post-nav-title-item">categories和tags页面不自动收录的问题</span>
-                                <span class="post-nav-item">上一篇</span>
-                            </span>
-                        </a>
-                    </div>
-                
                 
                     <div class="article-next">
                         <a class="next"
                            rel="next"
-                           href="/2020/07/04/svg%E5%9B%BE%E6%A0%87%E7%9A%84%E4%BD%BF%E7%94%A8/"
+                           href="/2021/06/18/useEffect-useRef/"
                         >
                             <span class="title flex-center">
-                                <span class="post-nav-title-item">svg图标的使用</span>
+                                <span class="post-nav-title-item">useEffect &amp; useRef</span>
                                 <span class="post-nav-item">下一篇</span>
                             </span>
                             <span class="right arrow-icon flex-center" >
@@ -412,7 +326,7 @@
         
             <div class="post-toc-wrap">
     <div class="post-toc">
-        <ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#git概念"><span class="nav-number">1.</span> <span class="nav-text">git概念</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#常用命令"><span class="nav-number">2.</span> <span class="nav-text">常用命令</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#git问题解决："><span class="nav-number">3.</span> <span class="nav-text">git问题解决：</span></a></li></ol>
+        <ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#参考"><span class="nav-number">1.</span> <span class="nav-text">参考</span></a></li></ol>
     </div>
 </div>
         

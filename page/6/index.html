@@ -118,6 +118,66 @@
                 
 
                 <h3 class="home-article-title">
+                    <a href="/2020/07/23/HTMLCSSJS%E6%B8%B2%E6%9F%93%E6%89%A7%E8%A1%8C/">
+                        HTML、CSS、JS互相阻塞？咋回事
+                    </a>
+                </h3>
+
+                <div class="home-article-content markdown-body">
+                    
+                        js是同步的，为了操作dom。在html执行中，也由于这个原因，有同步阻塞的情况。
+js的执行会影响Dom渲染吗?12345678910111213&lt;head&gt;    &lt;script&gt;        // 这个script放在...
+                    
+                </div>
+
+                <div class="home-article-meta-info-container">
+    <div class="home-article-meta-info">
+        <span><i class="fas fa-edit"></i> <span class="home-article-date" data-date="Thu Jul 23 2020 17:08:37 GMT+0800">2020-07-23</span></span>
+        
+        
+    </div>
+
+    <a href="/2020/07/23/HTMLCSSJS%E6%B8%B2%E6%9F%93%E6%89%A7%E8%A1%8C/">阅读全文 <i class="fas fa-angle-right"></i></a>
+</div>
+
+            </li>
+        
+            <li class="home-article-item">
+
+                
+
+                <h3 class="home-article-title">
+                    <a href="/2020/07/22/%E6%B5%8F%E8%A7%88%E5%99%A8%E6%B8%B2%E6%9F%93%E8%BF%87%E7%A8%8B/">
+                        浏览器渲染过程及优化
+                    </a>
+                </h3>
+
+                <div class="home-article-content markdown-body">
+                    
+                        熟练使用Chrome开发工具
+浏览器渲染基础cpu主要负责操作系统和程序  gpu负责显式  数据处理效率更高  gpu.js
+
+Dom是分层的  firefox的3d插件（已废弃）很好的展现了这个点。  Q:什么元素会分层？  A:根元素，posi...
+                    
+                </div>
+
+                <div class="home-article-meta-info-container">
+    <div class="home-article-meta-info">
+        <span><i class="fas fa-edit"></i> <span class="home-article-date" data-date="Wed Jul 22 2020 14:32:38 GMT+0800">2020-07-22</span></span>
+        
+        
+    </div>
+
+    <a href="/2020/07/22/%E6%B5%8F%E8%A7%88%E5%99%A8%E6%B8%B2%E6%9F%93%E8%BF%87%E7%A8%8B/">阅读全文 <i class="fas fa-angle-right"></i></a>
+</div>
+
+            </li>
+        
+            <li class="home-article-item">
+
+                
+
+                <h3 class="home-article-title">
                     <a href="/2020/07/21/%E5%89%8D%E7%AB%AF%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/">
                         前端性能优化
                     </a>
@@ -370,73 +430,6 @@ Server side:
     </div>
 
     <a href="/2020/07/08/%E8%BF%9B%E7%A8%8B%E7%BA%BF%E7%A8%8B%E5%8D%8F%E7%A8%8B/">阅读全文 <i class="fas fa-angle-right"></i></a>
-</div>
-
-            </li>
-        
-            <li class="home-article-item">
-
-                
-
-                <h3 class="home-article-title">
-                    <a href="/2020/07/07/js%E5%AE%9E%E7%8E%B0PM2%E5%A4%9A%E8%BF%9B%E7%A8%8B%E5%8E%9F%E7%90%86%EF%BC%88%E7%AE%80%E7%89%88%EF%BC%89/">
-                        js实现PM2多进程原理（简版）
-                    </a>
-                </h3>
-
-                <div class="home-article-content markdown-body">
-                    
-                        了解进程&amp;线程&amp;协程
-app.js
-前端实现的node项目
-
-123456// workervar http = require('http');http.createServer(function(req, res) &#123; ...
-                    
-                </div>
-
-                <div class="home-article-meta-info-container">
-    <div class="home-article-meta-info">
-        <span><i class="fas fa-edit"></i> <span class="home-article-date" data-date="Tue Jul 07 2020 11:43:27 GMT+0800">2020-07-07</span></span>
-        
-        
-    </div>
-
-    <a href="/2020/07/07/js%E5%AE%9E%E7%8E%B0PM2%E5%A4%9A%E8%BF%9B%E7%A8%8B%E5%8E%9F%E7%90%86%EF%BC%88%E7%AE%80%E7%89%88%EF%BC%89/">阅读全文 <i class="fas fa-angle-right"></i></a>
-</div>
-
-            </li>
-        
-            <li class="home-article-item">
-
-                
-
-                <h3 class="home-article-title">
-                    <a href="/2020/07/07/Linux%E5%85%8D%E5%AF%86%E8%BF%9C%E7%A8%8B%E7%99%BB%E5%BD%95/">
-                        Linux免密远程登录
-                    </a>
-                </h3>
-
-                <div class="home-article-content markdown-body">
-                    
-                        前端在部署项目时，使用Linux免密远程登录可以实现自动化中的一环。
-免密登录的原理ssh，密码学，公钥，私钥
-免密登录的步骤
-下文中：[你自己的名字]是私钥，[你自己的名字_rsa]是公钥
-
-
-生成密匙对
-  $ ssh-keygen -t rsa...
-                    
-                </div>
-
-                <div class="home-article-meta-info-container">
-    <div class="home-article-meta-info">
-        <span><i class="fas fa-edit"></i> <span class="home-article-date" data-date="Tue Jul 07 2020 10:51:12 GMT+0800">2020-07-07</span></span>
-        
-        
-    </div>
-
-    <a href="/2020/07/07/Linux%E5%85%8D%E5%AF%86%E8%BF%9C%E7%A8%8B%E7%99%BB%E5%BD%95/">阅读全文 <i class="fas fa-angle-right"></i></a>
 </div>
 
             </li>
