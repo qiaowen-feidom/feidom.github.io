@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
     
     <title>
-        React-防止内存泄漏处理 |
+        从props的children中获取ref |
         
         FEIDOM
     </title>
@@ -115,7 +115,7 @@
     <div class="article-content-container">
 
         <div class="article-title">
-            <span class="title-hover-animation">React-防止内存泄漏处理</span>
+            <span class="title-hover-animation">从props的children中获取ref</span>
         </div>
 
         
@@ -131,7 +131,7 @@
                     <div class="meta-info">
                         <div class="article-meta-info">
     <span class="article-date article-meta-item">
-        <i class="fas fa-calendar"></i> 2021-06-18 13:40:49
+        <i class="fas fa-calendar"></i> 2021-07-12 17:46:29
     </span>
     
         <span class="article-categories article-meta-item">
@@ -170,33 +170,20 @@
         
 
         <div class="article-content markdown-body">
-            <p>用React写了一段代码，浏览器的控制台<font color=red size=5>Error </font>如下：<br><font color=red>Warning: Can’t perform a React state update on an unmounted component. This is a no-op, but it indicates a memory leak in your application. To fix, cancel all subscriptions and asynchronous tasks in a useEffect cleanup function.</font></p>
-<p>啥意思呢：不能在未挂载的组件上执行React状态更新。这是一个无用功，但它表明你的应用程序中存在内存泄漏。要解决这个问题，在useEffect清理函数中取消所有的订阅和异步任务。</p>
-<p>以下是这段问题代码：</p>
-<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> Component = <span class="function">(<span class="params">props</span>) =&gt;</span> &#123;</span><br><span class="line">  <span class="keyword">const</span> &#123; itemId &#125; = props;</span><br><span class="line">  <span class="keyword">const</span> [ isRemoveing, setIsRemoveing ] = useState(<span class="literal">false</span>);</span><br><span class="line">  <span class="keyword">const</span> handlerRemove = <span class="keyword">async</span>() =&gt; &#123;</span><br><span class="line">    <span class="keyword">if</span>(isRemoveing) <span class="keyword">return</span>;</span><br><span class="line">    setIsRemoveing(<span class="literal">true</span>);</span><br><span class="line">    <span class="keyword">await</span> removeItem(itemId); <span class="comment">// 删除当前这个组件的数据，这个组件卸载</span></span><br><span class="line">    setIsRemoveing(<span class="literal">false</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> (</span><br><span class="line">    &lt;&gt;</span><br><span class="line">      &lt;div class_name=&#123; !isRemoveing ? <span class="string">'class1'</span> : <span class="string">'class2'</span> &#125; onClick=&#123;handlerRemove&#125; &gt;&lt;<span class="regexp">/div&gt;</span></span><br><span class="line"><span class="regexp">    &lt;/</span>&gt;</span><br><span class="line">  )</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p><strong>原因是啥呢</strong>：await等待一个异步请求的返回再<code>setIsRemoveing</code>。假如这个组件unmounted之后，请求还没回来，你还在这setState，不就炸了。</p>
-<p>好吧，那解决方式是不是在<code>useEffect</code>中定义一个卸载时的变量<code>unmounted</code>，然后在setIsRemoveing时判断卸载状态？</p>
-<p>嗯，基本是这个思路。那这个<code>unmounted</code>该怎么定义，是直接<code>const unmounted = false;</code>, 还是<code>const [ unmounted, setUnmounted ] = useState(false);</code>？<br>以下是Stack Overflow里一个帖子的回复：</p>
-<ul>
-<li>方式一：<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">useEffect(<span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">  <span class="keyword">let</span> unmounted = <span class="literal">false</span>;</span><br><span class="line">  setPageLoading(<span class="literal">true</span>);</span><br><span class="line">  props</span><br><span class="line">    .dispatch(fetchCourses())</span><br><span class="line">    .then(<span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">      <span class="keyword">if</span> (!unmounted) &#123;</span><br><span class="line">        setPageLoading(<span class="literal">false</span>);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;)</span><br><span class="line">    .catch(<span class="function">(<span class="params">error: string</span>) =&gt;</span> &#123;</span><br><span class="line">      <span class="keyword">if</span> (!unmounted) &#123;</span><br><span class="line">        toast.error(error);</span><br><span class="line">        setPageLoading(<span class="literal">false</span>);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> <span class="function"><span class="params">()</span> =&gt;</span> &#123; unmounted = <span class="literal">true</span> &#125;;</span><br><span class="line">&#125;, []);</span><br></pre></td></tr></table></figure></li>
-<li>方式二：useRef<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> Example = <span class="function">(<span class="params">props</span>) =&gt;</span> &#123;</span><br><span class="line">  <span class="keyword">const</span> unmounted = useRef(<span class="literal">false</span>);</span><br><span class="line">  useEffect(<span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="function"><span class="params">()</span> =&gt;</span> &#123; unmounted.current = <span class="literal">true</span> &#125;</span><br><span class="line">  &#125;, []);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">const</span> setFilter = <span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">    props.dispatch(fetchCourses()).then(<span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">      <span class="keyword">if</span> (!unmounted.current) &#123;</span><br><span class="line">        setLoading(<span class="literal">false</span>);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;)</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">  <span class="keyword">return</span> (</span><br><span class="line">    &lt;ReactTable onFetchData=&#123;setFilter&#125; <span class="comment">/* other props omitted */</span> /&gt;</span><br><span class="line">  );</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+            <h4 id="从props-children中处理ref"><a href="#从props-children中处理ref" class="headerlink" title="从props.children中处理ref"></a>从<code>props.children</code>中处理ref</h4><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Child</span> <span class="keyword">extends</span> <span class="title">React</span>.<span class="title">Component</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  render() &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="xml"><span class="tag">&lt;<span class="name">div</span>&gt;</span>Child<span class="tag">&lt;/<span class="name">div</span>&gt;</span></span>;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;  </span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">GetRef</span> <span class="keyword">extends</span> <span class="title">React</span>.<span class="title">Component</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  componentDidMount() &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="keyword">this</span>.ref);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  render() &#123;</span><br><span class="line">    <span class="keyword">const</span> childElement = React.Children.only(<span class="keyword">this</span>.props.children);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> React.cloneElement(</span><br><span class="line">      childElement, </span><br><span class="line">      &#123; <span class="attr">ref</span>: <span class="function"><span class="params">el</span> =&gt;</span> <span class="keyword">this</span>.ref = el &#125;</span><br><span class="line">    );</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">App</span> <span class="keyword">extends</span> <span class="title">Component</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  render() &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="xml"><span class="tag">&lt;<span class="name">GetRef</span>&gt;</span><span class="tag">&lt;<span class="name">Child</span>/&gt;</span><span class="tag">&lt;/<span class="name">GetRef</span>&gt;</span></span>;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-</li>
-</ul>
-<p>方式二中如果不用ref，用state或者直接定义变量的话，都实现不了。<br>好吧，是我不熟悉的<a class="link"   href="https://zh-hans.reactjs.org/docs/hooks-reference.html#useref"  target="_blank" rel="noopener">useRef<i class="fas fa-external-link-alt"></i></a>,这个链接是官方文档，可以先看下。<br>然后为了研究它，我找到一篇来自<a class="link"   href="https://leewarrick.com/"  target="_blank" rel="noopener">Lee Warrick<i class="fas fa-external-link-alt"></i></a>的<a class="link"   href="https://leewarrick.com/blog/react-use-effect-explained/"  target="_blank" rel="noopener">React’s useEffect and useRef Explained for Mortals<i class="fas fa-external-link-alt"></i></a>。<a href="/2021/06/18/useEffect-useRef/">这里</a>是我对这篇文章的翻译，仅供参考。</p>
-<h4 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h4><p><a class="link"   href="https://daviseford.com/blog/2019/07/11/react-hooks-check-if-mounted.html"  target="_blank" rel="noopener">React Hooks - Check If A Component Is Mounted<i class="fas fa-external-link-alt"></i></a><br><a class="link"   href="https://stackoverflow.com/questions/58038008/how-to-stop-memory-leak-in-useeffect-hook-react/58038029"  target="_blank" rel="noopener">how-to-stop-memory-leak-in-useeffect-hook-react<i class="fas fa-external-link-alt"></i></a></p>
-
+<h4 id="结合转发ref将ref绑定到children组件中的div中"><a href="#结合转发ref将ref绑定到children组件中的div中" class="headerlink" title="结合转发ref将ref绑定到children组件中的div中"></a>结合转发ref将ref绑定到children组件中的div中</h4><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Com组件</span></span><br><span class="line">interface Props &#123;</span><br><span class="line">  forwardedRef: ref | <span class="literal">null</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Com</span> <span class="keyword">extends</span> <span class="title">React</span>.<span class="title">Component</span>&lt;<span class="title">Props</span>, <span class="title">State</span>&gt; </span>&#123;</span><br><span class="line">  render() &#123;</span><br><span class="line">    <span class="keyword">const</span> &#123;forwardedRef&#125; = <span class="keyword">this</span>.props;</span><br><span class="line">    <span class="keyword">return</span> <span class="xml"><span class="tag">&lt;&gt;</span></span></span><br><span class="line">      &lt;div&gt;</span><br><span class="line">        &lt;div&gt;</span><br><span class="line">          &lt;div ref=&#123;forwardedRef&#125;&gt;&lt;/div&gt;</span><br><span class="line">        &lt;/div&gt;</span><br><span class="line"><span class="xml">      <span class="tag">&lt;/<span class="name">div</span>&gt;</span></span></span><br><span class="line"><span class="xml">    <span class="tag">&lt;&gt;</span></span></span><br><span class="line"><span class="xml">  &#125; </span></span><br><span class="line"><span class="xml">&#125;</span></span><br><span class="line"><span class="xml">const forwardRefCom =  React.forwardRef((props, ref) =&gt; (</span></span><br><span class="line"><span class="xml">    <span class="tag">&lt;<span class="name">Com</span> <span class="attr">forwardedRef</span>=<span class="string">&#123;ref&#125;</span> &#123;<span class="attr">...props</span>&#125; /&gt;</span></span></span><br><span class="line"><span class="xml">  ));</span></span><br><span class="line"><span class="xml">return forwardRefCom;</span></span><br></pre></td></tr></table></figure>
         </div>
 
         
             <div class="post-copyright-info">
                 <div class="article-copyright-info-container">
     <ul>
-        <li>本文标题：React-防止内存泄漏处理</li>
+        <li>本文标题：从props的children中获取ref</li>
         <li>本文作者：乔文飞</li>
-        <li>创建时间：2021-06-18 13:40:49</li>
+        <li>创建时间：2021-07-12 17:46:29</li>
         <li>
-            本文链接：http://www.feidom.com/2021/06/18/React-防止内存泄漏处理/
+            本文链接：http://www.feidom.com/2021/07/12/从props的children中获取ref/
         </li>
         <li>
             版权声明：本博客所有文章为作者学习笔记，有转载其他前端大佬的文章。转载时请注明出处。
@@ -210,29 +197,14 @@
         
             <div class="article-nav">
                 
-                    <div class="article-prev">
-                        <a class="prev"
-                           rel="prev"
-                           href="/2021/07/12/react%E7%9A%84%E8%BD%AC%E5%8F%91ref/"
-                        >
-                            <span class="left arrow-icon flex-center" >
-                              <i class="fas fa-chevron-left"></i>
-                            </span>
-                            <span class="title flex-center">
-                                <span class="post-nav-title-item">react的转发ref</span>
-                                <span class="post-nav-item">上一篇</span>
-                            </span>
-                        </a>
-                    </div>
-                
                 
                     <div class="article-next">
                         <a class="next"
                            rel="next"
-                           href="/2021/06/18/useEffect-useRef/"
+                           href="/2021/07/12/react%E7%9A%84%E8%BD%AC%E5%8F%91ref/"
                         >
                             <span class="title flex-center">
-                                <span class="post-nav-title-item">useEffect &amp; useRef</span>
+                                <span class="post-nav-title-item">react的转发ref</span>
                                 <span class="post-nav-item">下一篇</span>
                             </span>
                             <span class="right arrow-icon flex-center" >
@@ -341,7 +313,7 @@
         
             <div class="post-toc-wrap">
     <div class="post-toc">
-        <ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#参考"><span class="nav-number">1.</span> <span class="nav-text">参考</span></a></li></ol>
+        <ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#从props-children中处理ref"><span class="nav-number">1.</span> <span class="nav-text">从props.children中处理ref</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#结合转发ref将ref绑定到children组件中的div中"><span class="nav-number">2.</span> <span class="nav-text">结合转发ref将ref绑定到children组件中的div中</span></a></li></ol>
     </div>
 </div>
         
